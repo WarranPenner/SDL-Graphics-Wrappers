@@ -8,8 +8,11 @@ public:
 	//Intializes internals
 	Window();
 
+	static bool initSDLGraphics();
 	//Creates window
-	bool init();
+	bool createWindow();
+
+	
 
 	//Handles window events
 	void handleEvent(SDL_Event& e);

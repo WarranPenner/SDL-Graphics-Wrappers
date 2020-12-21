@@ -16,12 +16,9 @@ Window::Window()
 	mHeight = 0;
 }
 
-bool Window::init()
-{
-	//Create window
+bool Window::createWindow() {
 	mWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, DEF_W_, DEF_H_, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	if (mWindow != NULL)
-	{
+	if (mWindow != NULL) {
 		mMouseFocus = true;
 		mKeyboardFocus = true;
 		mWidth = DEF_W_;
@@ -46,9 +43,7 @@ bool Window::init()
 			//Flag as opened
 			mShown = true;
 		}
-	}
-	else
-	{
+	} else {
 		printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
 	}
 
@@ -209,3 +204,4 @@ bool Window::isShown()
 {
 	return mShown;
 }
+
