@@ -7,9 +7,15 @@ class Window {
 public:
 	~Window();
 	void init(std::string title, int w = -1, int h = -1);
+	SDL_Texture* loadTexture(std::string imgPath);
 	void handleEvent(SDL_Event& e);
 	void focus();
 	void render();
+
+	void paint(SDL_Texture* t, SDL_Rect r);
+	void paint(SDL_Texture* t, SDL_Rect r, int angle, SDL_Rect clip, 
+		SDL_RendererFlip f, Uint8 alpha);
+	
 
 	int getWidth();
 	int getHeight();
@@ -31,4 +37,9 @@ private:
 	bool fullScreen_ = false;
 	bool minimized_ = false;
 	bool shown_ = false;
+
+	SDL_Color BG_COLOR_ = {0x2F, 0x4F, 0x4F, 0xFF};
+	const SDL_Color COLOR_KEY_ = {0x78, 0x6e, 0x64, 0xFF};
+	// Transparent pixel color for BMP textures.
+	const SDL_BlendMode BLEND_MODE_ = SDL_BLENDMODE_BLEND;
 };

@@ -5,8 +5,9 @@ SDLApp::SDLApp() {
 		printf("SDL failed to initialize!\nSDL Error: %s\n", SDL_GetError());
 		return;
 	}
-
 	mainWindow_.init(APP_NAME_);
+	
+	texture_.init(mainWindow_.loadTexture("img.bmp"), &mainWindow_);
 }
 
 SDLApp::~SDLApp() {

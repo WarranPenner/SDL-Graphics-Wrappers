@@ -23,7 +23,7 @@ void Window::init(std::string title, int w, int h) {
 									SDL_WINDOW_SHOWN |
 									SDL_WINDOW_RESIZABLE);
 	} else {
-		window_ = SDL_CreateWindow(title.c_str(),
+		window_ = SDL_CreateWindow(	title.c_str(),
 									SDL_WINDOWPOS_UNDEFINED,
 									SDL_WINDOWPOS_UNDEFINED,
 									w,
@@ -32,7 +32,7 @@ void Window::init(std::string title, int w, int h) {
 	}
 
 	if (!window_) {
-		printf("Window is null!\nSDL Error: %s\n", SDL_GetError());
+		printf("Window is null!\nSDL error: %s\n", SDL_GetError());
 	} else {
 		mouseFocused_ = true;
 		keyboardFocused_ = true;
@@ -44,7 +44,7 @@ void Window::init(std::string title, int w, int h) {
 										SDL_RENDERER_ACCELERATED |
 										SDL_RENDERER_PRESENTVSYNC);
 		if (!renderer_) {
-			printf("Renderer is null!\nSDL Error: %s\n", SDL_GetError());
+			printf("Renderer is null!\nSDL error: %s\n", SDL_GetError());
 			SDL_DestroyWindow(window_);
 			window_ = nullptr;
 		} else {
@@ -52,6 +52,35 @@ void Window::init(std::string title, int w, int h) {
 			shown_ = true;
 		}
 	}
+}
+
+SDL_Texture* Window::loadTexture(std::string imgPath) {	
+	if (imgPath.at(imgPath.length() - 1) != *"p" &&
+		imgPath.at(imgPath.length() - 2) != *"m" &&
+		imgPath.at(imgPath.length() - 3) != *"b" &&
+		imgPath.at(imgPath.length() - 4) != *".") {
+		printf("Image file '%s' has an invalid type!\n", imgPath.c_str());
+	}
+
+	SDL_Surface* s = SDL_LoadBMP(imgPath.c_str());
+	if (!s) {
+		printf("Surface for '%s' is null!\n", imgPath.c_str());
+		printf("SDL error: %s\n", SDL_GetError());
+		return nullptr;
+	}
+
+	SDL_SetColorKey(s, SDL_TRUE, SDL_MapRGB(s->format, COLOR_KEY_.r,
+		COLOR_KEY_.g, COLOR_KEY_.b));
+	SDL_Texture* t = nullptr;
+	t = SDL_CreateTextureFromSurface(renderer_, s);
+
+	if (!t) {
+		printf("Texture for '%s' is null!\n", imgPath.c_str());
+		printf("SDL error: %s\n", SDL_GetError());
+	}
+
+	SDL_SetTextureBlendMode(t, BLEND_MODE_);
+	SDL_FreeSurface(s);
 }
 
 void Window::handleEvent(SDL_Event& e) {
@@ -116,11 +145,24 @@ void Window::focus()
 
 void Window::render()
 {
-	if (!minimized_) {
-		SDL_SetRenderDrawColor(renderer_, 0x2F, 0x4F, 0x4F, 0xFF);
-		SDL_RenderClear(renderer_);
-		SDL_RenderPresent(renderer_);
+	if (minimized_) {
+		return;
 	}
+
+	SDL_RenderPresent(renderer_);
+	SDL_SetRenderDrawColor(	renderer_,		BG_COLOR_.r,
+							BG_COLOR_.g,	BG_COLOR_.b,
+							BG_COLOR_.r);
+	SDL_RenderClear(renderer_);
+}
+
+void Window::paint(SDL_Texture* t, SDL_Rect r) {
+
+}
+
+void Window::paint(SDL_Texture* t, SDL_Rect r, int angle, SDL_Rect clip,
+	SDL_RendererFlip f, Uint8 alpha) {
+	SDL_RenderCopyEx(renderer_,	t, &clip, nullptr, angle, nullptr, f);
 }
 
 int Window::getWidth() {
