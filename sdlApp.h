@@ -11,6 +11,6 @@ public:
 	void run();
 private:
 	Window mainWindow_;
-	bool graphicsInitialized_ = false;
 	const int WINDOW_W_ = 640, WINDOW_H_ = 480;
+	const std::string APP_NAME_ = "SDL App";
 };

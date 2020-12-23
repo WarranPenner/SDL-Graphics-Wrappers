@@ -2,15 +2,15 @@
 
 SDLApp::SDLApp() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL failed to initialize!%s\n", SDL_GetError());
+		printf("SDL failed to initialize!\nSDL Error: %s\n", SDL_GetError());
 		return;
 	}
 
-	mainWindow_.createWindow();
+	mainWindow_.init(APP_NAME_);
 }
 
 SDLApp::~SDLApp() {
-	mainWindow_.free();
+	mainWindow_.~Window();
 	SDL_Quit();
 }
 

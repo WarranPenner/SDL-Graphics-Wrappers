@@ -1,207 +1,149 @@
 #include "window.h"
 
-Window::Window()
-{
-	//Initialize non-existant window
-	mWindow = NULL;
-	mRenderer = NULL;
-
-	mMouseFocus = false;
-	mKeyboardFocus = false;
-	mFullScreen = false;
-	mShown = false;
-	mWindowID = -1;
-
-	mWidth = 0;
-	mHeight = 0;
+Window::~Window() {
+	if (window_) {
+		SDL_DestroyWindow(window_);
+	}
 }
 
-bool Window::createWindow() {
-	mWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, DEF_W_, DEF_H_, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	if (mWindow != NULL) {
-		mMouseFocus = true;
-		mKeyboardFocus = true;
-		mWidth = DEF_W_;
-		mHeight = DEF_H_;
-
-		//Create renderer for window
-		mRenderer = SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-		if (mRenderer == NULL)
-		{
-			printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-			SDL_DestroyWindow(mWindow);
-			mWindow = NULL;
-		}
-		else
-		{
-			//Initialize renderer color
-			SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-			//Grab window identifier
-			mWindowID = SDL_GetWindowID(mWindow);
-
-			//Flag as opened
-			mShown = true;
-		}
-	} else {
-		printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
+void Window::init(std::string title, int w, int h) {
+	if (w == -1) {
+		w = DEF_W_;
+	}
+	if (h == -1) {	
+		h = DEF_H_;
 	}
 
-	return mWindow != NULL && mRenderer != NULL;
+	if (resizable) {
+		window_ = SDL_CreateWindow(	title.c_str(),
+									SDL_WINDOWPOS_UNDEFINED, 
+									SDL_WINDOWPOS_UNDEFINED, 
+									w, 
+									h,
+									SDL_WINDOW_SHOWN |
+									SDL_WINDOW_RESIZABLE);
+	} else {
+		window_ = SDL_CreateWindow(title.c_str(),
+									SDL_WINDOWPOS_UNDEFINED,
+									SDL_WINDOWPOS_UNDEFINED,
+									w,
+									h,
+									SDL_WINDOW_SHOWN);
+	}
+
+	if (!window_) {
+		printf("Window is null!\nSDL Error: %s\n", SDL_GetError());
+	} else {
+		mouseFocused_ = true;
+		keyboardFocused_ = true;
+		w_ = w;
+		h_ = h;
+
+		renderer_ = SDL_CreateRenderer(	window_,
+										-1,
+										SDL_RENDERER_ACCELERATED |
+										SDL_RENDERER_PRESENTVSYNC);
+		if (!renderer_) {
+			printf("Renderer is null!\nSDL Error: %s\n", SDL_GetError());
+			SDL_DestroyWindow(window_);
+			window_ = nullptr;
+		} else {
+			windowID_ = SDL_GetWindowID(window_);
+			shown_ = true;
+		}
+	}
 }
 
-void Window::handleEvent(SDL_Event& e)
-{
-	//If an event was detected for this window
-	if (e.type == SDL_WINDOWEVENT && e.window.windowID == mWindowID)
-	{
-		//Caption update flag
+void Window::handleEvent(SDL_Event& e) {
+	if (e.type == SDL_WINDOWEVENT && e.window.windowID == windowID_) {
 		bool updateCaption = false;
 
-		switch (e.window.event)
-		{
-			//Window appeared
+		switch (e.window.event) {
 		case SDL_WINDOWEVENT_SHOWN:
-			mShown = true;
+			shown_ = true;
 			break;
-
-			//Window disappeared
 		case SDL_WINDOWEVENT_HIDDEN:
-			mShown = false;
+			shown_ = false;
 			break;
-
-			//Get new dimensions and repaint
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
-			mWidth = e.window.data1;
-			mHeight = e.window.data2;
-			SDL_RenderPresent(mRenderer);
+			w_ = e.window.data1;
+			h_ = e.window.data2;
+			SDL_RenderPresent(renderer_);
 			break;
-
-			//Repaint on expose
 		case SDL_WINDOWEVENT_EXPOSED:
-			SDL_RenderPresent(mRenderer);
+			SDL_RenderPresent(renderer_);
 			break;
-
-			//Mouse enter
 		case SDL_WINDOWEVENT_ENTER:
-			mMouseFocus = true;
+			mouseFocused_ = true;
 			updateCaption = true;
 			break;
-
-			//Mouse exit
 		case SDL_WINDOWEVENT_LEAVE:
-			mMouseFocus = false;
+			mouseFocused_ = false;
 			updateCaption = true;
 			break;
-
-			//Keyboard focus gained
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
-			mKeyboardFocus = true;
+			keyboardFocused_ = true;
 			updateCaption = true;
 			break;
-
-			//Keyboard focus lost
 		case SDL_WINDOWEVENT_FOCUS_LOST:
-			mKeyboardFocus = false;
+			keyboardFocused_ = false;
 			updateCaption = true;
 			break;
-
-			//Window minimized
 		case SDL_WINDOWEVENT_MINIMIZED:
-			mMinimized = true;
+			minimized_ = true;
 			break;
-
-			//Window maxized
 		case SDL_WINDOWEVENT_MAXIMIZED:
-			mMinimized = false;
+			minimized_ = false;
 			break;
-
-			//Window restored
 		case SDL_WINDOWEVENT_RESTORED:
-			mMinimized = false;
+			minimized_ = false;
 			break;
-
-			//Hide on close
 		case SDL_WINDOWEVENT_CLOSE:
-			SDL_HideWindow(mWindow);
+			SDL_HideWindow(window_);
 			break;
-		}
-
-		//Update window caption with new data
-		if (updateCaption)
-		{
-			std::stringstream caption;
-			caption << "SDL Tutorial - ID: " << mWindowID << " MouseFocus:" << ((mMouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((mKeyboardFocus) ? "On" : "Off");
-			SDL_SetWindowTitle(mWindow, caption.str().c_str());
 		}
 	}
 }
 
 void Window::focus()
 {
-	//Restore window if needed
-	if (!mShown)
-	{
-		SDL_ShowWindow(mWindow);
+	if (!shown_) {
+		SDL_ShowWindow(window_);
 	}
 
-	//Move window forward
-	SDL_RaiseWindow(mWindow);
+	SDL_RaiseWindow(window_);
 }
 
 void Window::render()
 {
-	if (!mMinimized)
-	{
-		//Clear screen
-		SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-		SDL_RenderClear(mRenderer);
-
-		//Update screen
-		SDL_RenderPresent(mRenderer);
+	if (!minimized_) {
+		SDL_SetRenderDrawColor(renderer_, 0x2F, 0x4F, 0x4F, 0xFF);
+		SDL_RenderClear(renderer_);
+		SDL_RenderPresent(renderer_);
 	}
 }
 
-void Window::free()
-{
-	if (mWindow != NULL)
-	{
-		SDL_DestroyWindow(mWindow);
-	}
-
-	mMouseFocus = false;
-	mKeyboardFocus = false;
-	mWidth = 0;
-	mHeight = 0;
+int Window::getWidth() {
+	return w_;
 }
 
-int Window::getWidth()
-{
-	return mWidth;
+int Window::getHeight() {
+	return h_;
 }
 
-int Window::getHeight()
-{
-	return mHeight;
+bool Window::hasMouseFocus() {
+	return mouseFocused_;
 }
 
-bool Window::hasMouseFocus()
-{
-	return mMouseFocus;
+bool Window::hasKeyboardFocus() {
+	return keyboardFocused_;
 }
 
-bool Window::hasKeyboardFocus()
-{
-	return mKeyboardFocus;
+bool Window::isMinimized() {
+	return minimized_;
 }
 
-bool Window::isMinimized()
-{
-	return mMinimized;
-}
-
-bool Window::isShown()
-{
-	return mShown;
+bool Window::isShown() {
+	return shown_;
 }
 
