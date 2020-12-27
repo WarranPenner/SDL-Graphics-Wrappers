@@ -1,146 +1,119 @@
+#pragma once
 #include "window.h"
 
-Window::~Window() {
-	if (window_) {
-		SDL_DestroyWindow(window_);
-	}
-}
-
 void Window::init(std::string title, int w, int h) {
-	if (w == -1) {
-		w = DEF_W_;
-	}
-	if (h == -1) {	
-		h = DEF_H_;
-	}
+	nativeW_ = w_ = w;
+	nativeH_ = h_ = h;
 
-	if (resizable) {
-		window_ = SDL_CreateWindow(	title.c_str(),
-									SDL_WINDOWPOS_UNDEFINED, 
-									SDL_WINDOWPOS_UNDEFINED, 
-									w, 
-									h,
-									SDL_WINDOW_SHOWN |
-									SDL_WINDOW_RESIZABLE);
+	if (resizable_) {
+		sdlWindow_ = SDL_CreateWindow(	title.c_str(),
+										SDL_WINDOWPOS_UNDEFINED,
+										SDL_WINDOWPOS_UNDEFINED,
+										w_,
+										h_,
+										SDL_WINDOW_SHOWN |
+										SDL_WINDOW_RESIZABLE);
 	} else {
-		window_ = SDL_CreateWindow(	title.c_str(),
-									SDL_WINDOWPOS_UNDEFINED,
-									SDL_WINDOWPOS_UNDEFINED,
-									w,
-									h,
-									SDL_WINDOW_SHOWN);
+		sdlWindow_ = SDL_CreateWindow(	title.c_str(),
+										SDL_WINDOWPOS_UNDEFINED,
+										SDL_WINDOWPOS_UNDEFINED,
+										w_,
+										h_,
+										SDL_WINDOW_SHOWN);
 	}
 
-	if (!window_) {
-		printf("Window is null!\nSDL error: %s\n", SDL_GetError());
+	if (!sdlWindow_) {
+		printf("ERROR: Window is null!\n");
+		printf("SDL error: %s\n", SDL_GetError());
 	} else {
 		mouseFocused_ = true;
 		keyboardFocused_ = true;
-		w_ = w;
-		h_ = h;
 
-		renderer_ = SDL_CreateRenderer(	window_,
+		renderer_ = SDL_CreateRenderer(	sdlWindow_,
 										-1,
 										SDL_RENDERER_ACCELERATED |
 										SDL_RENDERER_PRESENTVSYNC);
 		if (!renderer_) {
-			printf("Renderer is null!\nSDL error: %s\n", SDL_GetError());
-			SDL_DestroyWindow(window_);
-			window_ = nullptr;
+			printf("ERROR: Renderer is null!\n");
+			printf("SDL error: %s\n", SDL_GetError());
+			SDL_DestroyWindow(sdlWindow_);
+			sdlWindow_ = nullptr;
 		} else {
-			windowID_ = SDL_GetWindowID(window_);
+			windowID_ = SDL_GetWindowID(sdlWindow_);
 			shown_ = true;
 		}
 	}
+
+	if (DEFAULT_FULL_SCREEN_) {
+		setFullscreen();
+	}
+
+	SDL_RenderSetLogicalSize(renderer_, nativeW_, nativeH_);
 }
 
-SDL_Texture* Window::loadTexture(std::string imgPath) {	
-	if (imgPath.at(imgPath.length() - 1) != *"p" &&
-		imgPath.at(imgPath.length() - 2) != *"m" &&
-		imgPath.at(imgPath.length() - 3) != *"b" &&
-		imgPath.at(imgPath.length() - 4) != *".") {
-		printf("Image file '%s' has an invalid type!\n", imgPath.c_str());
+Window::~Window() {
+	if (renderer_) {
+		SDL_DestroyRenderer(renderer_);
 	}
-
-	SDL_Surface* s = SDL_LoadBMP(imgPath.c_str());
-	if (!s) {
-		printf("Surface for '%s' is null!\n", imgPath.c_str());
-		printf("SDL error: %s\n", SDL_GetError());
-		return nullptr;
-	}
-
-	SDL_SetColorKey(s, SDL_TRUE, SDL_MapRGB(s->format, COLOR_KEY_.r,
-		COLOR_KEY_.g, COLOR_KEY_.b));
-	SDL_Texture* t = nullptr;
-	t = SDL_CreateTextureFromSurface(renderer_, s);
-
-	if (!t) {
-		printf("Texture for '%s' is null!\n", imgPath.c_str());
-		printf("SDL error: %s\n", SDL_GetError());
-	}
-
-	SDL_SetTextureBlendMode(t, BLEND_MODE_);
-	SDL_FreeSurface(s);
-}
-
-void Window::handleEvent(SDL_Event& e) {
-	if (e.type == SDL_WINDOWEVENT && e.window.windowID == windowID_) {
-		bool updateCaption = false;
-
-		switch (e.window.event) {
-		case SDL_WINDOWEVENT_SHOWN:
-			shown_ = true;
-			break;
-		case SDL_WINDOWEVENT_HIDDEN:
-			shown_ = false;
-			break;
-		case SDL_WINDOWEVENT_SIZE_CHANGED:
-			w_ = e.window.data1;
-			h_ = e.window.data2;
-			SDL_RenderPresent(renderer_);
-			break;
-		case SDL_WINDOWEVENT_EXPOSED:
-			SDL_RenderPresent(renderer_);
-			break;
-		case SDL_WINDOWEVENT_ENTER:
-			mouseFocused_ = true;
-			updateCaption = true;
-			break;
-		case SDL_WINDOWEVENT_LEAVE:
-			mouseFocused_ = false;
-			updateCaption = true;
-			break;
-		case SDL_WINDOWEVENT_FOCUS_GAINED:
-			keyboardFocused_ = true;
-			updateCaption = true;
-			break;
-		case SDL_WINDOWEVENT_FOCUS_LOST:
-			keyboardFocused_ = false;
-			updateCaption = true;
-			break;
-		case SDL_WINDOWEVENT_MINIMIZED:
-			minimized_ = true;
-			break;
-		case SDL_WINDOWEVENT_MAXIMIZED:
-			minimized_ = false;
-			break;
-		case SDL_WINDOWEVENT_RESTORED:
-			minimized_ = false;
-			break;
-		case SDL_WINDOWEVENT_CLOSE:
-			SDL_HideWindow(window_);
-			break;
-		}
+	if (sdlWindow_) {
+		SDL_DestroyWindow(sdlWindow_);
 	}
 }
 
-void Window::focus()
-{
-	if (!shown_) {
-		SDL_ShowWindow(window_);
+void Window::paint(SDL_Texture* t, SDL_Rect r) {
+	if (!viewport_) {
+		SDL_RenderCopy(renderer_, t, nullptr, &r);
+		return;
 	}
 
-	SDL_RaiseWindow(window_);
+	SDL_Rect vp = viewport_->getRect();
+	r.x -= vp.x;
+	r.y -= vp.y;
+
+	SDL_RenderCopy(renderer_, t, nullptr, &r);
+}
+
+void Window::paint(SDL_Texture* t, SDL_Rect r, SDL_Rect* clip,
+	double angle, SDL_RendererFlip f) {
+	if (!viewport_) {
+		SDL_RenderCopyEx(renderer_, t, clip, &r, angle, nullptr, f);
+		return;
+	}
+
+	SDL_Rect vp = viewport_->getRect();
+	r.x -= vp.x;
+	r.y -= vp.y;
+
+	SDL_RenderCopyEx(renderer_, t, clip, &r, angle, nullptr, f);
+}
+
+void Window::drawLine(SDL_Point p1, SDL_Point p2, SDL_Color c) {
+	SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
+	SDL_RenderDrawLine(renderer_, p1.x, p1.y, p2.x, p2.y);
+}
+
+void Window::drawPoint(SDL_Point p, SDL_Color c) {
+	SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
+	SDL_RenderDrawPoint(renderer_, p.x, p.y);
+}
+
+void Window::drawRect(SDL_Rect r, SDL_Color c) {
+	if (!viewport_) {
+		SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
+		SDL_RenderFillRect(renderer_, &r);
+		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);
+		return;
+	}
+
+	/*camPos_.x = r.x - currCam_->getOriginX();									//////////////
+	camPos_.y = r.y - currCam_->getOriginY();
+	camPos_.w = r.w;
+	camPos_.h = r.h;
+
+	SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+	SDL_RenderFillRect(renderer_, &camPos_);
+	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);*/
 }
 
 void Window::render()
@@ -150,27 +123,97 @@ void Window::render()
 	}
 
 	SDL_RenderPresent(renderer_);
-	SDL_SetRenderDrawColor(	renderer_,		BG_COLOR_.r,
-							BG_COLOR_.g,	BG_COLOR_.b,
-							BG_COLOR_.r);
+	SDL_SetRenderDrawColor(renderer_, BG_COLOR_.r, BG_COLOR_.g,
+		BG_COLOR_.b, BG_COLOR_.r);
 	SDL_RenderClear(renderer_);
 }
 
-void Window::paint(SDL_Texture* t, SDL_Rect r) {
+void Window::handleEvent(SDL_Event& e) {
+	if (e.window.windowID != windowID_)
+		return;
 
+	switch (e.window.event) {
+	case SDL_WINDOWEVENT_SIZE_CHANGED:	w_ = e.window.data1;
+										h_ = e.window.data2;
+	case SDL_WINDOWEVENT_EXPOSED:		SDL_RenderPresent(renderer_);	break;
+	case SDL_WINDOWEVENT_SHOWN:			shown_ = true;					break;
+	case SDL_WINDOWEVENT_HIDDEN:		shown_ = false;					break;
+	case SDL_WINDOWEVENT_ENTER:			mouseFocused_ = true;			break;
+	case SDL_WINDOWEVENT_LEAVE:			mouseFocused_ = false;			break;
+	case SDL_WINDOWEVENT_FOCUS_GAINED:	keyboardFocused_ = true;		break;
+	case SDL_WINDOWEVENT_FOCUS_LOST:	keyboardFocused_ = false;		break;
+	case SDL_WINDOWEVENT_MINIMIZED:		minimized_ = true;				break;
+	case SDL_WINDOWEVENT_MAXIMIZED:		minimized_ = false;				break;
+	case SDL_WINDOWEVENT_RESTORED:		minimized_ = false;				break;
+	case SDL_WINDOWEVENT_CLOSE:			SDL_HideWindow(sdlWindow_);		break;
+	}
 }
 
-void Window::paint(SDL_Texture* t, SDL_Rect r, int angle, SDL_Rect clip,
-	SDL_RendererFlip f, Uint8 alpha) {
-	SDL_RenderCopyEx(renderer_,	t, &clip, nullptr, angle, nullptr, f);
+void Window::focus()
+{
+	if (!shown_) {
+		SDL_ShowWindow(sdlWindow_);
+	}
+
+	SDL_RaiseWindow(sdlWindow_);
+}
+
+void Window::setViewport(Viewport* vp) {
+	if (!vp->isInitialized()) {
+		printf("ERROR: Uninitialized viewport sent to window!\n");
+		return;
+	}
+
+	viewport_ = vp;
+}
+
+void Window::setBlendMode(SDL_Texture* t, SDL_BlendMode bMode) {
+	SDL_SetTextureBlendMode(t, bMode);
+}
+
+void Window::setAlpha(SDL_Texture* t, Uint8 alpha) {
+	SDL_SetTextureAlphaMod(t, alpha);
+}
+
+void Window::setFullscreen() {
+	SDL_SetWindowFullscreen(sdlWindow_, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	SDL_RenderSetLogicalSize(renderer_, nativeW_, nativeH_);
+}
+
+void Window::setWindowed() {
+	SDL_SetWindowSize(sdlWindow_, w_, h_);
+	SDL_SetWindowPosition(sdlWindow_, SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED);
+}
+
+void Window::setWindowSize(int w, int h) {
+	w_ = w;
+	h_ = h;
+
+	SDL_SetWindowSize(sdlWindow_, w_, h_);
+}
+
+void Window::setNativeSize(int w, int h) {
+	nativeW_ = w;
+	nativeH_ = h;
+
+	SDL_RenderSetLogicalSize(renderer_, nativeW_, nativeH_);
 }
 
 int Window::getWidth() {
-	return w_;
+	return nativeW_;
 }
 
 int Window::getHeight() {
-	return h_;
+	return nativeH_;
+}
+
+SDL_Window* Window::getWindow() {
+	return sdlWindow_;
+}
+
+SDL_Renderer* Window::getRenderer() {
+	return renderer_;
 }
 
 bool Window::hasMouseFocus() {
@@ -188,4 +231,3 @@ bool Window::isMinimized() {
 bool Window::isShown() {
 	return shown_;
 }
-

@@ -1,8 +1,6 @@
 #pragma once
-#include <SDL.h>
-#include <stdio.h>
-#include <vector>
-#include "texture.h"
+#include <string>
+#include "text.h"
 
 class SDLApp {
 public:
@@ -11,8 +9,14 @@ public:
 	void run();
 private:
 	Window mainWindow_;
-	SDL_Renderer* renderer_;
-	Texture texture_;
-	const int WINDOW_W_ = 640, WINDOW_H_ = 480;
+	Viewport viewport_;
+
+	// For demo purposes:
+	Texture picture_;
+	Text message_;
+
 	const std::string APP_NAME_ = "SDL App";
+	const int WINDOW_W_ = 640, WINDOW_H_ = 360;
+	const int NATIVE_DISP_W_ = 640, NATIVE_DISP_H_ = 360;
+	bool running_ = true;
 };
