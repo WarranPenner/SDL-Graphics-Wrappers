@@ -1,6 +1,5 @@
 #pragma once
 #include <SDL.h>
-#include <SDL_ttf.h>
 #include <string>
 #include "viewport.h"
 
@@ -12,6 +11,7 @@ public:
 	void paint(SDL_Texture* t, SDL_Rect r);
 	void paint(SDL_Texture* t, SDL_Rect r, SDL_Rect* clip,
 		double angle, SDL_RendererFlip f = SDL_FLIP_NONE);
+	// The following primitive-drawing functions aren't designed for viewports.
 	void drawLine(SDL_Point p1, SDL_Point p2, SDL_Color c);
 	void drawPoint(SDL_Point p, SDL_Color c);
 	void drawRect(SDL_Rect r, SDL_Color c);

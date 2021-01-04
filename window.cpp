@@ -1,4 +1,3 @@
-#pragma once
 #include "window.h"
 
 void Window::init(std::string title, int w, int h) {
@@ -98,22 +97,9 @@ void Window::drawPoint(SDL_Point p, SDL_Color c) {
 }
 
 void Window::drawRect(SDL_Rect r, SDL_Color c) {
-	if (!viewport_) {
-		SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
-		SDL_RenderFillRect(renderer_, &r);
-		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);
-		return;
-	}
-
-	/*camPos_.x = r.x - currCam_->getOriginX();									//////////////
-	camPos_.y = r.y - currCam_->getOriginY();
-	camPos_.w = r.w;
-	camPos_.h = r.h;
-
 	SDL_SetRenderDrawColor(renderer_, c.r, c.g, c.b, c.a);
-	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
-	SDL_RenderFillRect(renderer_, &camPos_);
-	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);*/
+	SDL_RenderFillRect(renderer_, &r);
+	SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 0);
 }
 
 void Window::render()
@@ -189,14 +175,12 @@ void Window::setWindowed() {
 void Window::setWindowSize(int w, int h) {
 	w_ = w;
 	h_ = h;
-
 	SDL_SetWindowSize(sdlWindow_, w_, h_);
 }
 
 void Window::setNativeSize(int w, int h) {
 	nativeW_ = w;
 	nativeH_ = h;
-
 	SDL_RenderSetLogicalSize(renderer_, nativeW_, nativeH_);
 }
 

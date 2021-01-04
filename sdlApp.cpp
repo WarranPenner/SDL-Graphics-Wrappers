@@ -2,7 +2,7 @@
 #include "sdlApp.h"
 
 SDLApp::SDLApp() {
-	if (SDL_Init((SDL_INIT_VIDEO | SDL_INIT_AUDIO) == 0)) {
+	if (SDL_Init((SDL_INIT_VIDEO) == 0)) {
 		printf("ERROR: SDL_INIT has failed!\n");
 		printf("SDL error: %s\n", SDL_GetError());
 	}
@@ -41,7 +41,7 @@ void SDLApp::run() {
 		// For demo purposes:
 		picture_.paint();
 		message_.write("Hello world!", {10, 40});
-		
+
 		mainWindow_.render();
 	}
 }
