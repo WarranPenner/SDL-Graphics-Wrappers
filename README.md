@@ -1,5 +1,5 @@
 # SDL Graphics Wrappers
-*Provides basic wrapper classes for windows and rendering processes with SDL2/C++. Includes TTF text and viewport functionality.
+*Provides basic wrapper classes for windows and 2D rendering processes with SDL2/C++. Includes TTF text and viewport functionality.
 Currently designed for BMP textures only.*
 <br />
 <br />
