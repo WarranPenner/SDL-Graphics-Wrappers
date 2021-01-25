@@ -1,4 +1,3 @@
-#pragma once
 #include <SDL.h>
 #include "window.h"
 
@@ -21,7 +20,7 @@ protected:
 	Window* window_ = nullptr;
 
 	bool initialized_ = false;
-	SDL_Rect rect_ = { 0, 0, 0, 0 }, clip_ = rect_;
+	SDL_Rect rect_ = {0, 0, 0, 0}, clip_ = rect_;
 	int angle_ = 0;
 	SDL_RendererFlip flip_ = SDL_FLIP_NONE;
 	Uint8 alpha_ = 255;

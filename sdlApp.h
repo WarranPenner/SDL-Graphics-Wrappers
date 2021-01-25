@@ -1,4 +1,3 @@
-#pragma once
 #include <string>
 #include "text.h"
 
@@ -16,7 +15,7 @@ private:
 	const int NATIVE_DISP_W_ = 640,	NATIVE_DISP_H_ = 360;
 	bool running_ = true;
 
-	// For demo purposes:
+	// For demonstration purposes:
 	Texture picture_;
 	Text message_;
 };

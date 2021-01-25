@@ -1,4 +1,3 @@
-#pragma once
 #include <SDL_ttf.h>
 #include <map>
 #include <string>
